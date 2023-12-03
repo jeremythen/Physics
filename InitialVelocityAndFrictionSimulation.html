@@ -117,7 +117,13 @@
         // Update distance and velocity
         const distanceTraveled = position.toFixed(2);
         const currentVelocity = velocity.toFixed(2);
-        distanceElement.textContent = 'Distance: ' + distanceTraveled + 'm';
+
+        if(distanceTraveled < 0) {
+          distanceElement.textContent = 'Distance: ' + 0 + 'm';
+        }  else {
+          distanceElement.textContent = 'Distance: ' + distanceTraveled + 'm';
+        }      
+
         velocityElement.textContent = 'Velocity: ' + currentVelocity + 'm/s';
 
         clearCanvas();
@@ -135,6 +141,7 @@
         if (velocity <= 0.01) {
           isPaused = true;
           pauseResumeBtn.textContent = 'Resume';
+          velocityElement.textContent = 'Velocity: ' + 0 + 'm/s';
         }
 
         // Update the start time for the next frame
@@ -156,9 +163,29 @@
 
     // Start the simulation with the given inputs
     function startSimulation() {
+
       // Get values from input fields
-      frictionCoefficient = parseFloat(document.getElementById('frictionInput').value) || frictionCoefficient;
-      initialVelocity = parseFloat(document.getElementById('velocityInput').value) || initialVelocity;
+      frictionCoefficient = parseFloat(frictionInput.value);
+      initialVelocity = parseFloat(velocityInput.value);
+
+      if(frictionCoefficient < 0.1 || initialVelocity <= 0) {
+
+        if(frictionCoefficient < 0.1) {
+          alert('Friction coefficient must be equal or greater than 0.1. Reseting to a valid value.');
+          frictionCoefficient = 0.1;
+          frictionInput.value = frictionCoefficient;
+        }
+
+        if(initialVelocity < 0) {
+          alert('Initial velocity must be greater than 0. Reseting to a valid value.');
+          initialVelocity = 1;
+          velocityInput.value = initialVelocity;
+        }
+
+        alert('Aborting simulation...');
+        return;
+
+      }
 
       resetSimulationVariables();
 
