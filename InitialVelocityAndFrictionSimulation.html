@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Simulation with Timer, Pause/Resume, Gravity, and Friction</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <style>
+    body {
+      overflow-x: auto;
+    }
+
+    canvas {
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-4">
+        <label for="frictionInput">Friction Coefficient:</label>
+        <input type="number" step="0.1" id="frictionInput" class="form-control" value="0.6">
+      </div>
+      <div class="col-md-4">
+        <label for="velocityInput">Initial Velocity (m/s):</label>
+        <input type="number" step="1" id="velocityInput" class="form-control" value="15">
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary mt-4" onclick="startSimulation()">Start Simulation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="m-4">
+    <canvas id="physicsCanvas" width="2800" height="400" class="mt-4"></canvas>
+    <div id="info" class="mt-2">
+      <div id="timer">Time: 0s</div>
+      <div id="distance">Distance: 0m</div>
+      <div id="velocity">Velocity: 0m/s</div>
+    </div>
+    <button id="pauseResumeBtn" onclick="togglePauseResume()" class="btn btn-secondary mt-2">Pause/Resume</button>
+  </div>
+
+  <!-- Include Bootstrap JS and Popper.js -->
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+  <script>
+    const canvas = document.getElementById('physicsCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'black';
+
+    const infoElement = document.getElementById('info');
+    const timerElement = document.getElementById('timer');
+    const distanceElement = document.getElementById('distance');
+    const velocityElement = document.getElementById('velocity');
+    const pauseResumeBtn = document.getElementById('pauseResumeBtn');
+
+    // Set up variables
+    const gravity = 9.8; // Acceleration due to gravity in meters per second squared
+    let squareSize = 20; // Size of the square in pixels
+    let pixelsPerMeter = 40; // Number of pixels per meter
+    let initialVelocity = 15; // Initial velocity of the square in meters per second
+    let frictionCoefficient = 0.6; // Friction coefficient
+    let position = 0; // Initial position of the square in meters
+    let velocity = initialVelocity; // Initial velocity of the square in meters per second
+    let startTime; // Time when the animation started
+    let totalElapsedTime = 0; // Total elapsed time including paused time
+    let isPaused = false; // Flag to track whether the animation is paused
+
+    const drawRulerTicks = () => {
+      for (let i = 0; i <= canvas.width / pixelsPerMeter; i++) {
+        const x = i * pixelsPerMeter + squareSize;
+        ctx.beginPath();
+        ctx.moveTo(x, canvas.height - 10);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+        ctx.fillText(i + 'm', x - 5, canvas.height - 15);
+      }
+    };
+
+    const drawSquare = () => {
+      ctx.fillStyle = '#3498db';
+      ctx.fillRect(position * pixelsPerMeter, canvas.height - squareSize, squareSize, squareSize);
+      ctx.fillStyle = 'black';
+    };
+
+    const clearCanvas = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const togglePauseResume = () => {
+      isPaused = !isPaused;
+      pauseResumeBtn.textContent = isPaused ? 'Resume' : 'Pause';
+      if (!isPaused) {
+        startTime = performance.now();
+      }
+    };
+
+    function draw(timestamp) {
+      // If paused, don't update the timer or position
+      if (!isPaused) {
+        // Initialize the start time if it's not set
+        if (!startTime) {
+          startTime = timestamp;
+        }
+
+        // Calculate elapsed time
+        const elapsedTime = (timestamp - startTime) / 1000; // Convert to seconds
+
+        // Update the timer element
+        totalElapsedTime += elapsedTime;
+        timerElement.textContent = 'Time: ' + totalElapsedTime.toFixed(2) + 's';
+
+        // Update distance and velocity
+        const distanceTraveled = position.toFixed(2);
+        const currentVelocity = velocity.toFixed(2);
+        distanceElement.textContent = 'Distance: ' + distanceTraveled + 'm';
+        velocityElement.textContent = 'Velocity: ' + currentVelocity + 'm/s';
+
+        clearCanvas();
+
+        drawRulerTicks();
+
+        // Update position and velocity using Euler's method
+        const acceleration = -gravity * frictionCoefficient; // Acceleration due to friction
+        velocity += acceleration * elapsedTime;
+        position += velocity * elapsedTime + 0.5 * acceleration * elapsedTime ** 2;
+
+        drawSquare();
+
+        // Stop the simulation when the box comes to rest
+        if (velocity <= 0.01) {
+          isPaused = true;
+          pauseResumeBtn.textContent = 'Resume';
+        }
+
+        // Update the start time for the next frame
+        startTime = timestamp;
+      }
+
+      // Request the next animation frame
+      requestAnimationFrame(draw);
+    }
+
+    const resetSimulationVariables = () => {
+      position = 0;
+      velocity = initialVelocity;
+      startTime = null;
+      totalElapsedTime = 0;
+      isPaused = false;
+      pauseResumeBtn.textContent = 'Pause';
+    };
+
+    // Start the simulation with the given inputs
+    function startSimulation() {
+      // Get values from input fields
+      frictionCoefficient = parseFloat(document.getElementById('frictionInput').value) || frictionCoefficient;
+      initialVelocity = parseFloat(document.getElementById('velocityInput').value) || initialVelocity;
+
+      resetSimulationVariables();
+
+      // Start the animation loop
+      requestAnimationFrame(draw);
+    }
+  </script>
+</body>
+</html>
