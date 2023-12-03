@@ -168,7 +168,7 @@
       frictionCoefficient = parseFloat(frictionInput.value);
       initialVelocity = parseFloat(velocityInput.value);
 
-      if(frictionCoefficient < 0.1 || initialVelocity <= 0) {
+      if(!frictionCoefficient || !initialVelocity || frictionCoefficient < 0.1 || initialVelocity <= 0) {
 
         if(frictionCoefficient < 0.1) {
           alert('Friction coefficient must be equal or greater than 0.1. Reseting to a valid value.');
