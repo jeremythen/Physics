@@ -18,10 +18,7 @@
 <body>
   <div class="container mt-4">
     <div class="row">
-      <div class="col-md-4">
-        <label for="frictionInput">Friction Coefficient:</label>
-        <input type="number" step="0.1" id="frictionInput" class="form-control" value="0.6">
-      </div>
+
       <div class="col-md-4">
         <label for="velocityInput">Initial Velocity (m/s):</label>
         <input type="number" step="1" id="velocityInput" class="form-control" value="15">
@@ -32,8 +29,26 @@
     </div>
   </div>
 
+  <div class="container mt-5">
+    <form id="dynamicForm">
+      <div class="form-group" id="inputPairs">
+        <!-- Initial pair -->
+        <div class="input-group mb-3">
+          <input type="number" class="form-control" placeholder="Friction Coefficient" name="friction[]" required>
+          <input type="number" class="form-control" placeholder="At Meter" name="meter[]" required>
+          <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" onclick="addInputPair()">+</button>
+          </div>
+        </div>
+      </div>
+      
+      <button type="button" class="btn btn-primary" onclick="getFrictionCoefficientAndAtMetersValues()">Submit</button>
+    </form>
+  </div>
+  
+
   <div class="m-4">
-    <canvas id="physicsCanvas" width="2800" height="400" class="mt-4"></canvas>
+    <canvas id="physicsCanvas" width="6000" height="400" class="mt-4"></canvas>
     <div id="info" class="mt-2">
       <div id="timer">Time: 0s</div>
       <div id="distance">Distance: 0m</div>
@@ -62,13 +77,15 @@
     const gravity = 9.8; // Acceleration due to gravity in meters per second squared
     let squareSize = 20; // Size of the square in pixels
     let pixelsPerMeter = 40; // Number of pixels per meter
-    let initialVelocity = 15; // Initial velocity of the square in meters per second
-    let frictionCoefficient = 0.6; // Friction coefficient
+    let initialVelocity = 155; // Initial velocity of the square in meters per second
+    let frictionCoefficient = 0.1; // Friction coefficient
     let position = 0; // Initial position of the square in meters
     let velocity = initialVelocity; // Initial velocity of the square in meters per second
     let startTime; // Time when the animation started
     let totalElapsedTime = 0; // Total elapsed time including paused time
     let isPaused = false; // Flag to track whether the animation is paused
+    let incrementDistance = 5; // meters
+    let incrementFrictionCoefficientBy = 0.05;
 
     const drawRulerTicks = () => {
       for (let i = 0; i <= canvas.width / pixelsPerMeter; i++) {
@@ -115,7 +132,7 @@
         timerElement.textContent = 'Time: ' + totalElapsedTime.toFixed(2) + 's';
 
         // Update distance and velocity
-        const distanceTraveled = position.toFixed(2);
+        let distanceTraveled = position.toFixed(2);
         const currentVelocity = velocity.toFixed(2);
 
         if(distanceTraveled < 0) {
@@ -147,6 +164,14 @@
 
         // Update the start time for the next frame
         startTime = timestamp;
+        console.log('distanceTraveled: ', distanceTraveled)
+        console.log('incrementDistance: ', incrementDistance)
+        if(distanceTraveled == incrementDistance) {
+          incrementDistance += 5; // meters
+          frictionCoefficient += incrementFrictionCoefficientBy;
+          console.log('time: ', totalElapsedTime, 'meters: ', distanceTraveled, 'frictionCoefficient: ', frictionCoefficient)
+        }
+
       }
 
       // Request the next animation frame
@@ -166,33 +191,91 @@
     function startSimulation() {
 
       // Get values from input fields
-      frictionCoefficient = parseFloat(frictionInput.value);
-      initialVelocity = parseFloat(velocityInput.value);
+      // frictionCoefficient = parseFloat(frictionInput.value);
+      // initialVelocity = parseFloat(velocityInput.value);
 
-      if(!frictionCoefficient || !initialVelocity || frictionCoefficient < 0.1 || initialVelocity <= 0) {
+      // if(!frictionCoefficient || !initialVelocity || frictionCoefficient < 0.1 || initialVelocity <= 0) {
 
-        if(frictionCoefficient < 0.1) {
-          alert('Friction coefficient must be equal or greater than 0.1. Reseting to a valid value.');
-          frictionCoefficient = 0.1;
-          frictionInput.value = frictionCoefficient;
-        }
+      //   if(frictionCoefficient < 0.1) {
+      //     alert('Friction coefficient must be equal or greater than 0.1. Reseting to a valid value.');
+      //     frictionCoefficient = 0.1;
+      //     frictionInput.value = frictionCoefficient;
+      //   }
 
-        if(initialVelocity < 0) {
-          alert('Initial velocity must be greater than 0. Reseting to a valid value.');
-          initialVelocity = 1;
-          velocityInput.value = initialVelocity;
-        }
+      //   if(initialVelocity < 0) {
+      //     alert('Initial velocity must be greater than 0. Reseting to a valid value.');
+      //     initialVelocity = 1;
+      //     velocityInput.value = initialVelocity;
+      //   }
 
-        alert('Aborting simulation...');
-        return;
+      //   alert('Aborting simulation...');
+      //   return;
 
-      }
+      // }
 
       resetSimulationVariables();
 
       // Start the animation loop
       requestAnimationFrame(draw);
     }
+
+    function addInputPair() {
+      const inputPairsDiv = document.getElementById('inputPairs');
+      
+      // Create a new pair of input elements
+      const newInputPair = document.createElement('div');
+      newInputPair.classList.add('input-group', 'mb-3');
+      newInputPair.innerHTML = `
+        <input type="number" class="form-control" placeholder="Friction Coefficient" name="friction[]" required>
+        <input type="number" class="form-control" placeholder="At Meter" name="meter[]" required>
+        <div class="input-group-append">
+          <button class="btn btn-outline-secondary" type="button" onclick="removeInputPair(this)">-</button>
+        </div>
+      `;
+      
+      // Append the new pair to the container
+      inputPairsDiv.appendChild(newInputPair);
+  }
+
+  function removeInputPair(button) {
+    // Remove the parent div of the clicked button (which is the input pair)
+    button.parentNode.parentNode.remove();
+  }
+
+  function getFrictionCoefficientAndAtMetersValues() {
+    // Get all input pairs
+    const inputPairs = document.querySelectorAll('#inputPairs .input-group');
+    
+    // Create an array of objects
+    const inputData = Array.from(inputPairs).map(pair => {
+      const frictionInput = pair.querySelector('input[name="friction[]"]');
+      const meterInput = pair.querySelector('input[name="meter[]"]');
+
+      const frictionCoefficient = parseFloat(frictionInput.value);
+      const atMeters = parseFloat(meterInput.value);
+
+      if(!frictionCoefficient || !atMeters || frictionCoefficient < 0.1 || atMeters <= 0) {
+        if(frictionCoefficient < 0.1) {
+          alert('Friction coefficient must be equal or greater than 0.1. Reseting to a valid value.');
+          frictionInput.value = 0.1;
+        }
+
+        if(atMeters < 0) {
+          alert('At meters must be greater than 0. Reseting to a valid value.');
+          meterInput.value = 1;
+        }
+      }
+      
+      return {
+        frictionCoefficient: frictionInput.value,
+        atMeters: meterInput.value
+      };
+    });
+    
+    // Log the array of objects (you can do whatever you want with this data)
+    console.log(inputData);
+  }
+
   </script>
 </body>
 </html>
